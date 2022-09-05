@@ -1,0 +1,34 @@
+---
+title: "MPDB Reference Example"
+author: "Matthias Richter"
+date: '2022-07-28'
+output: html_document
+---
+
+# Recommended R packages
+
+You can query the mpdb API easily via the elasticsearch R client and use the tidyverse suite to evaluate your data.
+
+```{r setup}
+if (!require('elastic')) install.packages('elastic')
+if (!require('tidyverse')) install.packages('tidyverse')
+knitr::opts_chunk$set(echo = TRUE)
+library(elastic)
+library(tidyverse)
+```
+
+# Setting up the API connection
+
+```{r connection}
+con <- connect(host = 'musikverlage.slub-dresden.de/api/search', port = 80, path = '', transport_schema = 'https')
+#index_exists(con, 'published_item')
+#Search_uri(con, index='published_item', size = 1)
+#docs_get(con)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)

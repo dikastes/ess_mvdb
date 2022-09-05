@@ -6,3 +6,4 @@
 *.toc
 .*
 !.gitignore
+.Rproj.user
