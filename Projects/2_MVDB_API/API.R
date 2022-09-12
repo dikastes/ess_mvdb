@@ -35,9 +35,15 @@ search <- function(query = '', fields = '', index = 'published_item') {
   }
 }
 
+# Suche nach 'Bach' in Verlagsartikeln
 search(q='bach')
+# Suche nach 'Requiem' in Werken
 search(q='requiem', i='work')
+# Suche nach 'deutsch' mit freier Endung in Werken
 search(q='deutsch*', i='work')$generic_title
+# Suche nach 'Violine' im Feld 'name' von Instrumenten
 search(q='violine', i='instrument', f='name')
+# Suche nach 'Lied' in Genres
 search(q='lied', i='genre')
+# Suche nach 'Lied' m Feld 'name' von Genres
 search(q='lied', f='name', i='genre')

@@ -1,10 +1,6 @@
-# Wir laden das Tidyverse
-
 if(!require('tidyverse')) install.packages('tidyverse')
 if(!require('jsonlite')) install.packages('jsonlite')
 library(tidyverse)
-
-# und deklarieren Funktionen, die uns das Suchen erleichtern
 
 config <- function(path, size = 10000) {
   # str_c() konkateniert strings

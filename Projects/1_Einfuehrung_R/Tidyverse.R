@@ -8,6 +8,7 @@ if (!require('tidyverse')) {
 }
 # Bibliotheken werden mit der library-Funktion geladen
 library(tidyverse)
+library(magrittr)
 
 # Mit dem Tidyverse steht uns der pipe-Operator %>% zur Verfügung.
 # Damit können Funktionsaufrufe fun(param1) umgeschrieben werden als
@@ -71,15 +72,6 @@ data %>% mutate(party = rename_green_single(party))
 rename_green <- Vectorize(rename_green_single)
 data %>% mutate(party = rename_green(party))
 
-# Äquivalent kann rename_green mithilfe von Piping definiert werden
-rename_green <- function(party) {
-  if (party == 'Grüne') {
-    'Bündnis 90'
-  } else {
-    party
-  }
-} %>% Vectorize
-
 # Zu vielen Anwendungsfällen existieren vorgefertigte vektorisierte Funktionen
 c('Grüne', 'CDU') %>% str_replace('Grüne', 'Bündnis 90')
 'Grüne' %>% str_replace('Grüne', 'Bündnis 90')
@@ -120,31 +112,42 @@ data %>%
 ##
 
 # Berechne den BMI einzeln für alle Proband:innen.
-bmi <- function(weight, height) {
-  weight / (height ^ 2)
-} %>% Vectorize
+bmi <- Vectorize(function(weight, height) {
+  weight / ((height / 100) ^ 2)
+})
 
 bmi_dataset <- data %>%
+    mutate(bmi = bmi(weight, height))
   
 # Berechne den durchschnittlichen BMI aller Proband:innen.
 bmi_mean <- bmi_dataset %>%
+    summarise(bmi_mean = mean(bmi))
   
 # Berechne den durchschnittlichen BMI nach Geschlecht.
 bmi_gender <- bmi_dataset %>%
+    group_by(gender) %>%
+    summarise(bmi_mean = mean(bmi))
   
 # Berechne den durchschnittlichen BMI nach Parteipräferenz.
 bmi_party <- bmi_dataset %>%
+    group_by(party) %>%
+    summarise(bmi_mean = mean(bmi))
   
 # Berechne den durchschnittlichen BMI nach Geschlecht UND Parteipräferenz.
 bmi_gender_party <- bmi_dataset %>%
+    group_by(party, gender) %>%
+    summarise(bmi_mean = mean(bmi))
  
 # Berechne die absoluten und Relativen Stimmanteile der Parteien in der Stichprobe.
 sizeOfSample <- length(data$party)
 absoluteShares <- data %>%
-relativeShares <- data %>%
+    group_by(party) %>%
+    summarise(total = n())
+relativeShares <- absoluteShares %>%
+    mutate(relative = total / sizeOfSample)
   
 # Berechne die Einkommensteuer einzeln für alle Proband:innen
-income_tax_function <- function(salary) {
+income_tax_function <- Vectorize(function(salary) {
   if (salary <= 10347) {
     y = (salary - 10347) / 10000
     (1088.67 * y + 1400) * y
@@ -154,11 +157,23 @@ income_tax_function <- function(salary) {
   } else {
     0.42 * salary - 9336.45
   }
-} %>% Vectorize
-income_tax <-
+})
+income_tax <- data %>%
+    mutate(Einkommensteuer = income_tax_function(income))
   
 # Berechne die relativen Stimmanteile der Parteien in Abhängigkeit vom Geschlecht
-party_gender <- relativeShares %>%
+data %>%
+    group_by(party, gender) %>%
+    summarise(relativ = n() * 2 / sizeOfSample) %>%
+    arrange(gender, desc(relativ))
   
 # Berechne die relativen Stimmanteile der Parteien in Abhängigkeit vom Lebensjahrzehnt
-party_age <- relativeShares %>%
+data %<>% mutate(decade = round(age, -1))
+age_percentage <- data %>%
+    group_by(decade) %>%
+    summarise(n = n())
+data %>%
+    inner_join(age_percentage) %>%
+    group_by(decade, party) %>%
+    summarise(absolut = n() / n) %>%
+    unique

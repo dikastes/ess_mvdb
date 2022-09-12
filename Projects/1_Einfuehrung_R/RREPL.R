@@ -120,6 +120,8 @@ faculty(6)
 # Bemerkung: Die Fakultätsfunktion wächst extrem stark und Variablen
 # erhalten nur begrenzten Speicherplatz. Die oben definierte Funktion
 # gibt ab 171 auf.
+faculty(168)
+faculty(169)
 faculty(170)
 faculty(171)
 
@@ -137,7 +139,7 @@ FALSE & 2^4 == 16
 
 # Implementiere die Funktion isAMultipleOfThree.
 isAMultipleOfThree <- function (param) {
-
+    param %% 3 == 0
 }
 
 isAMultipleOfThree(10) # FALSE
@@ -148,7 +150,11 @@ isAMultipleOfThree(1)  # FALSE
 
 # Implementiere die Funktion nthFibonacciNumber.
 nthFibonacciNumber <- function (n) {
-
+    if (n <= 2) {
+        1
+    } else {
+        nthFibonacciNumber(n-1) + nthFibonacciNumber(n-2)
+    }
 }
 
 nthFibonacciNumber(1)  # 1
@@ -165,7 +171,11 @@ nthFibonacciNumber(20) # 6,765
 
 # Implementiere die Funktion fibonacciSeriesToN
 fibonacciSeriesToN <- function(n) {
-  
+    if (n == 1) {
+       c(1)
+    } else {
+       c(fibonacciSeriesToN(n-1), nthFibonacciNumber(n))
+    } 
 }
 
 fibonacciSeriesToN(1)  # c(1)
@@ -173,3 +183,4 @@ fibonacciSeriesToN(2)  # c(1, 1)
 fibonacciSeriesToN(3)  # c(1, 1, 2)
 fibonacciSeriesToN(4)  # c(1, 1, 2, 3)
 fibonacciSeriesToN(5)  # c(1, 1, 2, 3, 5)
+
