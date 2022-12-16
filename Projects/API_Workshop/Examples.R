@@ -1,8 +1,3 @@
-if (!require('tidyverse')) { install.packages('tidyverse') }
-if (!require('magrittr')) { install.packages('magrittr') }
-library(tidyverse)
-library(magrittr)
-
 # Einführung R-REPL
 
 # Die REPL (read eval print loop) nimmt Ausdrücke entgegen, evaluiert sie, 
@@ -18,10 +13,6 @@ library(magrittr)
 
 # Zeichenkette (String)
 'hallo'
-
-# Boolwert
-TRUE
-FALSE
 
 # Liste
 c(1, 2)
@@ -79,17 +70,17 @@ addIncrement(arg2 = 3, arg1 = 2)
 # API-Anbindung
 
 # Suche nach 'Bach' in Verlagsartikeln
-search(q='bach')
+bach <- search(q='bach')
 # Suche nach 'Requiem' in Werken
-search(q='requiem', i='work')
+requiem <- search(q='requiem', i='work')
 # Suche nach 'deutsch' mit freier Endung in Werken
-search(q='deutsch*', i='work')$generic_title
+deutsch <- search(q='deutsch*', i='work')$generic_title
 # Suche nach 'Violine' im Feld 'name' von Instrumenten
-search(q='violine', i='instrument', f='name')
+violine <- search(q='violine', i='instrument', f='name')
 # Suche nach 'Lied' in Genres
-search(q='lied', i='genre')
+lied <- search(q='lied', i='genre')
 # Suche nach 'Lied' m Feld 'name' von Genres
-search(q='lied', f='name', i='genre')
+liedlied <- search(q='lied', f='name', i='genre')
 
 # Mit dem Tidyverse steht uns der pipe-Operator %>% zur Verfügung.
 # Damit können Funktionsaufrufe fun(param1) umgeschrieben werden als
@@ -123,15 +114,21 @@ sum(buffer)
 # 3. Piping
 datapoints %>% double %>% sum
 
-# Die zentrale Datenstruktur in Tidyverse ist der Tibble
-data <- read_csv("dataset.csv")
-View(data)
-
-# Einzelne Spalten eines Tibbles werden mit $ adressiert
-View(data$shoe_size)
+# Mit unnest werden komplexe Zellen in die Tabelle expandiert. Es entstehen
+# neue Zeilen und neue Spalten.
+# Mit filter werden Zeilen anhand einer Bedingung aussortiert.
+repair <- 'unique'
+bach %>%
+    unnest(works, repair = repair)
+bach %>%
+    unnest(works, repair = repair) %>%
+    unnest(published_subitems, repair = repair) %>%
+    filter(lengths(prints) > 0) %>%
+    unnest(prints, repair = repair) ->
+    bach_expanded
 
 # Einzelne Spalten eines Tibbles können verändert werden.
-data %>% mutate(weight = weight * 2)
+bach_expanded %>% mutate(quantity = quantity * 2)
 
 # mutate ist Teil des dplyr-Paketes im Tidyverse, siehe das dazugehörige
 # Cheatsheet
@@ -139,92 +136,87 @@ data %>% mutate(weight = weight * 2)
 
 # Einzelne oder mehrere Spalten eines Tibbles können zu einer
 # Kennzahl zusammengefasst werden.
-data %>% summarise(mean_income = income %>% mean)
+bach_expanded %>% summarise(mean_prints = quantity %>% mean)
 
 # Vor dem Zusammenfassen können Gruppen gebildet werden.
-data %>%
-  mutate(age = age %>% round(-1)) %>%
-  group_by(age) %>%
-  summarise(mean_income = income %>% mean)
+bach_expanded %>%
+  group_by(voice) %>%
+  summarise(mean_prints = quantity %>% mean)
 
 # Wir können uns einen Überblick über die Einkommensverteilung verschaffen.
-data %>%
-  mutate(income = income %>% round(-4)) %>%
-  group_by(income) %>%
+bach_expanded %>%
+  group_by(part) %>%
   summarise(total = n())
 
-# Wir können Menschen mit besonders kleinen oder besonders großen
-# Füßen aus der Analyse ausschließen.
-min_size <- min(data$shoe_size)
-max_size <- max(data$shoe_size)
-data %>%
-  filter(
-    shoe_size != min_size,
-    shoe_size != max_size
-  ) %>%
-  mutate(age = age %>% round(-1)) %>%
-  group_by(age) %>%
-  summarise(total = n())
+# Zusammenfassung dplyr-Verben
+# Wesentliche Funktionalitäten der Funktionalen Programmieren werden durch
+# diese dplyr-Verben implementiert:
+# *filter*: sortiere Zeilen anhand einer Bedingung aus
+# *summarise*: ermittle einen Kennwert über alle Zeilen
+# *mutate*: errechne eine Spalte auf der Grundlage von Informationen aus anderen
+# *select*: sortiere einzelne Spalten aus
+# Spalten
+# Wichtige Hilfsfunktionen
+# *group_by*: definiert Gruppen, über die Funktionen laufen können, nützlich
+# in Verbindung mit summarise
+# *unique*: lösche alle duplizierten Zeilen, s.u.
+# *arrange*: sortiere Zeilen anhand einer Spalte, s.u.
 
 # Zeitserien
 
 # Zeige die Entwicklung der Auflagen von PE_00043
-data <- search(q='PE_00043')
-repair = 'unique'
-prints <- data %>%
-  unnest('published_subitems', names_repair = repair) %>%
-  unnest('prints', names_repair = repair) %>%
-  select(date_of_action, Quantität = quantity) %>%
-  mutate(Jahr = year(date_of_action)) %>%
-  arrange(Jahr)
+pe43 <- search(q='PE_00043')
+pe43 %>%
+    unnest('published_subitems', names_repair = repair) %>%
+    unnest('prints', names_repair = repair) %>%
+    select(date_of_action, Quantität = quantity) %>%
+    mutate(Jahr = year(date_of_action)) %>%
+    arrange(Jahr) ->
+    pe43_prints
 
-prints %>% ggplot(aes(x = Jahr, y = Quantität)) +
+pe43_prints %>% ggplot(aes(x = Jahr, y = Quantität)) #+
   #geom_point()
   #geom_col()
   #geom_violin()
-  geom_line()
+  #geom_line()
 
 # Zeige die Entwicklung der Auflagen von PE_00023
-data <- search(q='PE_00023')
-View(data)
+pe23 <- search(q='PE_00023')
+pe23 %>%
+    unnest('published_subitems', names_repair = repair) %>%
+    unnest('prints', names_repair = repair) %>%
+    select(
+      date_of_action, 
+      Quantität = quantity,
+      Stimme = voice
+    ) %>%
+    mutate(Jahr = year(date_of_action)) %>%
+    arrange(Jahr) ->
+    pe23_prints
 
-prints <- data %>%
-  unnest('published_subitems', names_repair = repair) %>%
-  unnest('prints', names_repair = repair) %>%
-  select(
-    date_of_action, 
-    Quantität = quantity,
-    Stimme = voice
-  ) %>%
-  mutate(Jahr = year(date_of_action)) %>%
-  arrange(Jahr)
-View(prints)
-
-prints_null <- prints %>%
-  full_join(rg) %>%
-  complete(Jahr, Stimme, fill = list(Quantität = 0)) %>%
-  filter(!is.na(Stimme))
+rg <- tibble(Jahr = 1870:1930)
+pe23_prints %>%
+    full_join(rg) %>%
+    complete(Jahr, Stimme, fill = list(Quantität = 0)) %>%
+    filter(!is.na(Stimme)) ->
+    pe23_prints_null
 
 # Dotplot
-prints %>% ggplot(aes(x = Jahr, y = Stimme)) +
+pe23_prints %>% ggplot(aes(x = Jahr, y = Stimme)) +
   geom_point(aes(size = Quantität)) +
   geom_line() +
   theme_minimal()
 
 # 
-prints_null %>% ggplot(aes(x = Jahr, y = Quantität)) +  
+pe23_prints_null %>% ggplot(aes(x = Jahr, y = Quantität)) +  
   #geom_point()
   #geom_point(aes(color = Stimme, alpha = .1))
   #geom_col(aes(fill = Stimme), position=position_dodge2())
   geom_line(aes(color = Stimme, alpha = .3))
 
-# Lineplot mit gleitendem Mittelwert
-prints_ma %>% ggplot(aes(x = Jahr, y = glMW)) +
-  geom_line(aes(color = Stimme))
-
 # Gruppierung der Stimmen nach Instrumenten, Stimmen, Partitur
 voices <- c('EStA', 'EStB', 'EStS', 'EStT', 'EStC')
-prints_ma %>%
+pe23_prints_null %>%
   mutate(
     Gruppe = ifelse(
       Stimme == 'P',
@@ -235,11 +227,11 @@ prints_ma %>%
         'Instrument')
       )
     ) %>%
-  ggplot(aes(x = Jahr, y = glMW)) +
+  ggplot(aes(x = Jahr, y = Quantität)) +
   geom_line(aes(color = Stimme)) +
   facet_grid(rows = vars(Gruppe), scales='free')
 
 # Einzelfacettierung
-prints_ma %>% ggplot(aes(x = Jahr, y = glMW)) +
+pe23_prints_null %>% ggplot(aes(x = Jahr, y = Quantität)) +
   geom_line() +
   facet_grid(rows = vars(Stimme))
