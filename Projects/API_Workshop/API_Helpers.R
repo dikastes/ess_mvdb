@@ -4,6 +4,12 @@ if(!require('magrittr')) install.packages('magrittr')
 if(!require('lubridate')) install.packages('lubridate')
 if(!require('zoo')) install.packages('zoo')
 
+library('tidyverse')
+library('jsonlite')
+library('magrittr')
+library('lubridate')
+library('zoo')
+
 config <- function(path, size = 10000) {
   str_c(path, '?size=', size)
 }

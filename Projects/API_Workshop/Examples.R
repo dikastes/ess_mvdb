@@ -71,6 +71,8 @@ addIncrement(arg2 = 3, arg1 = 2)
 
 # Suche nach 'Bach' in Verlagsartikeln
 bach <- search(q='bach')
+# Suche nach 'Mozart' in Personen
+mozart <- search(q='mozart', i='person')
 # Suche nach 'Requiem' in Werken
 requiem <- search(q='requiem', i='work')
 # Suche nach 'deutsch' mit freier Endung in Werken
@@ -129,6 +131,25 @@ bach %>%
 
 # Einzelne Spalten eines Tibbles können verändert werden.
 bach_expanded %>% mutate(quantity = quantity * 2)
+
+# Mozarts Problem
+mozart %>%
+    unnest(works, repair = repair) %>%
+    unnest(published_subitems, repair = repair) %>%
+    filter(lengths(prints) > 0) %>%
+    unnest(prints, repair = repair) ->
+    mozart_expanded
+mozart_expanded %>%
+    filter(
+        (uid1 == 822 | uid1 == 823),
+        uid3 == 4829
+    )
+mozart_expanded %>%
+    summarise(Total = sum(quantity))
+mozart_expanded %>%
+    select(uid3, quantity) %>%
+    unique %>%
+    summarise(Total = sum(quantity))
 
 # mutate ist Teil des dplyr-Paketes im Tidyverse, siehe das dazugehörige
 # Cheatsheet
