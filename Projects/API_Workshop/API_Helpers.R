@@ -2,23 +2,23 @@ if(!require('tidyverse')) install.packages('tidyverse')
 if(!require('jsonlite')) install.packages('jsonlite')
 if(!require('magrittr')) install.packages('magrittr')
 if(!require('lubridate')) install.packages('lubridate')
-library(tidyverse)
+if(!require('zoo')) install.packages('zoo')
 
 config <- function(path, size = 10000) {
-  paste(path, '?size=', size)
+  str_c(path, '?size=', size)
 }
 
 search <- function(query = '', fields = '', index = 'published_item') {
   path <- 'https://musikverlage.slub-dresden.de/api/search'
   url <- config(path)
-  url <- paste(url, '&index=', index)
+  url <- str_c(url, '&index=', index)
   if (query!= '') {
-    url <- paste(url, '&query=', query)
+    url <- str_c(url, '&query=', query)
   }
   if (fields != '') {
-    url <- paste(url, '&fields=', fields)
+    url <- str_c(url, '&fields=', fields)
   }
-  print(paste('querying ', url))
+  print(str_c('querying ', url))
   doc <- jsonlite::fromJSON(url)
   if (doc$hits$total$value == 0) {
     print('No results')
@@ -26,7 +26,7 @@ search <- function(query = '', fields = '', index = 'published_item') {
   } else {
     as_tibble(doc$hits$hits) %>%
       unnest(c('_source')) %>%
-      select(!'_index':'uid')
+      select(!'_index':'_score')
   }
 }
 
@@ -44,8 +44,8 @@ expand_economics <- function(df) {
     } else if ('date_of_birth' %in% cols) {
         print(
             paste(
-                'I detected a person. ',
-                'I\'ll only expand economics via works',
+                'I detected a person.',
+                'I\'ll only expand economics via works.',
                 'For economics on editors or collection please expand manually.'
             )
         )
@@ -53,54 +53,115 @@ expand_economics <- function(df) {
     } else {
         type <- 'genre'
     }
-    print(type)
     # conditional expansion
     if (type == 'instrument') {
         df %<>%
-            filter(lengths(instrumentations) > 0) %>%
-            unnest( instrumentations, names_repair = repair )
+            mutate( uid_instrument = uid ) %>%
+            filter( lengths(instrumentations) > 0 ) %>%
+            unnest( instrumentations, names_repair = repair ) %>%
+            rename( uid_instrumentations = uid )
+    }
+    if (type == 'person') {
+        df %<>% rename( uid_person = uid )
+    }
+    if (type == 'published_item') {
+        df %<>% rename( uid_publisheditem = uid )
+    }
+    if (type == 'genre') {
+        df %<>% rename( uid_genre = uid )
     }
     if (type %in% c('person', 'genre', 'instrument')) {
         df %<>%
             filter(lengths(works) > 0) %>%
-            unnest( works, names_repair = repair )
+            unnest( works, names_repair = repair ) %>%
+            rename( uid_work = uid )
     }
     df %>%
         filter(lengths(published_subitems) > 0) %>%
         unnest( published_subitems, names_repair = repair ) %>%
+        rename( uid_published_subitem = uid ) %>%
         filter(lengths(prints) > 0) %>%
-        unnest( prints, names_repair = repair )
+        unnest( prints, names_repair = repair ) %>%
+        rename( uid_print = uid )
 }
 
 plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
     if (!('quantity' %in% colnames(df))) {
         df %<>% expand_economics
     }
+    df %>% summarise(d = min(Jahr)) -> min_year
+    df %>% summarise(d = max(Jahr)) -> max_year
+    tibble(Jahr = min_year$d : max_year$d) -> year_span
     df %<>%
         mutate(Jahr = year(date_of_action))
-    if (color) {
-        if (facet) {
+    print("color")
+    print(color)
+    print("facet")
+    print(facet)
+    if (color != '') {
+        print("if")
+        aesthetics <- aes_string(x = "Jahr", y = "Total", color = color)
+        print(aesthetics)
+        if (facet != '') {
+            print("ifif")
+            crossing(year_span, df %>% ungroup %>% select({{color}}, {{facet}}) %>% unique) ->
+                joiner
             df %<>%
-                select(Jahr, {{color}}, {{facet}}) %>%
-                group_by(Jahr, {{color}}, {{facet}})
+                select(uid_print, quantity, Jahr, {{color}}, {{facet}}) %>%
+                unique %>%
+                group_by_("Jahr", color, facet) %>%
+                summarise(Total = sum(quantity)) %>%
+                right_join(joiner) %>%
+                replace_na(list(Total = 0)) %>%
+                ggplot(aesthetics) +
+                    geom_line() +
+                    facet_grid(rows = {{facet}}) +
+                    theme_minimal()
         } else {
-            df %<>%
-                select(Jahr, {{facet}}) %>%
-                group_by(Jahr, {{facet}})
+            print("ifelse")
+            crossing(year_span, df %>% ungroup %>% select({{color}}) %>% unique) ->
+                joiner
+            df %>%
+                select(uid_print, quantity, Jahr, {{color}}) %>%
+                unique %>%
+                group_by_("Jahr", color) %>%
+                summarise(Total = sum(quantity)) %>%
+                right_join(joiner) %>%
+                replace_na(list(Total = 0)) %>%
+                ggplot(aesthetics) +
+                    geom_line() +
+                    theme_minimal()
         }
     } else {
-        if (facet) {
+        aesthetics <- aes(x = Jahr, y = Total)
+        print("else")
+        if (facet != '') {
+            print("elseif")
+            crossing(year_span, df %>% ungroup %>% select({{facet}}) %>% unique) ->
+                joiner
             df %<>%
-                select(Jahr, {facet}) %>%
-                group_by(Jahr, {facet})
-        } else (facet) {
+                select(uid_print, quantity, Jahr, {{facet}}) %>%
+                unique %>%
+                group_by_("Jahr", facet) %>%
+                summarise(Total = sum(quantity)) %>%
+                right_join(joiner) %>%
+                replace_na(list(Total = 0)) %>%
+                ggplot(aesthetics) +
+                    geom_line() +
+                    facet_grid(rows = {{facet}}) +
+                    theme_minimal()
+        } else {
+            print("elseelse")
             df %<>%
-                select(Jahr) %>%
-                group_by(Jahr)
+                select(uid_print, quantity, Jahr) %>%
+                unique %>%
+                group_by_("Jahr") %>%
+                summarise(Total = sum(quantity))
+                ggplot(aesthetics) +
+                    geom_line() +
+                    theme_minimal()
         }
     }
-    df %<>%
-        summarise(Total = sum(quantity))
 }
 
 write_csvfile <- function(df, filename = 'out.csv') {
