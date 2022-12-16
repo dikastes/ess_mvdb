@@ -99,9 +99,6 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
     if (!('quantity' %in% colnames(df))) {
         df %<>% expand_economics
     }
-    if (movavg) {
-        df %<>% mutate(Total = rollmean(Total, movavg))
-    }
     df %<>%
         mutate(Jahr = year(date_of_action))
     df %>% summarise(d = min(Jahr)) -> min_year
@@ -123,7 +120,11 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
                 select(uid_print, quantity, Jahr, {{color}}, {{facet}}) %>%
                 unique %>%
                 group_by_("Jahr", color, facet) %>%
-                summarise(Total = sum(quantity)) %>%
+                summarise(Total = sum(quantity))
+            if (movavg) {
+                df %<>% mutate(Total = rollmean(Total, movavg, na.pad=TRUE))
+            }
+            df %<>%
                 right_join(joiner) %>%
                 replace_na(list(Total = 0)) %>%
                 ggplot(aesthetics) +
@@ -138,7 +139,11 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
                 select(uid_print, quantity, Jahr, {{color}}) %>%
                 unique %>%
                 group_by_("Jahr", color) %>%
-                summarise(Total = sum(quantity)) %>%
+                summarise(Total = sum(quantity))
+            if (movavg) {
+                df %<>% mutate(Total = rollmean(Total, movavg, na.pad=TRUE))
+            }
+            df %<>%
                 right_join(joiner) %>%
                 replace_na(list(Total = 0)) %>%
                 ggplot(aesthetics) +
@@ -156,7 +161,11 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
                 select(uid_print, quantity, Jahr, {{facet}}) %>%
                 unique %>%
                 group_by_("Jahr", facet) %>%
-                summarise(Total = sum(quantity)) %>%
+                summarise(Total = sum(quantity))
+            if (movavg) {
+                df %<>% mutate(Total = rollmean(Total, movavg, na.pad=TRUE))
+            }
+            df %<>%
                 right_join(joiner) %>%
                 replace_na(list(Total = 0)) %>%
                 ggplot(aesthetics) +
@@ -169,7 +178,11 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
                 select(uid_print, quantity, Jahr) %>%
                 unique %>%
                 group_by_("Jahr") %>%
-                summarise(Total = sum(quantity)) %>%
+                summarise(Total = sum(quantity))
+            if (movavg) {
+                df %<>% mutate(Total = rollmean(Total, movavg, na.pad=TRUE))
+            }
+            df %<>%
                 ggplot(aesthetics) +
                     geom_line() +
                     theme_minimal()
