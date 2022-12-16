@@ -164,7 +164,6 @@ bach_expanded %>%
   group_by(voice) %>%
   summarise(mean_prints = quantity %>% mean)
 
-# Wir können uns einen Überblick über die Einkommensverteilung verschaffen.
 bach_expanded %>%
   group_by(part) %>%
   summarise(total = n())
@@ -236,63 +235,3 @@ lied %>% plot_timeseries
 
 liedlied %>% plot_timeseries
 
-
-
-# Zeige die Entwicklung der Auflagen von PE_00023
-pe23 <- search(q='PE_00023')
-pe23 %>%
-    unnest('published_subitems', names_repair = repair) %>%
-    unnest('prints', names_repair = repair) %>%
-    select(
-      date_of_action, 
-      Quantität = quantity,
-      Stimme = voice
-    ) %>%
-    mutate(Jahr = year(date_of_action)) %>%
-    arrange(Jahr) ->
-    pe23_prints
-
-pe23_prints %>%
-    full_join(rg) %>%
-    complete(Jahr, Stimme, fill = list(Quantität = 0)) %>%
-    filter(!is.na(Stimme)) ->
-    pe23_prints_null
-
-# Dotplot
-pe23_prints %>% ggplot(aes(x = Jahr, y = Stimme)) +
-    geom_point(aes(size = Quantität)) +
-    geom_line() +
-    theme_minimal()
-
-# 
-pe23_prints_null %>% ggplot(aes(x = Jahr, y = Quantität)) +  
-    #geom_point()
-    #geom_point(aes(color = Stimme, alpha = .1))
-    #geom_col(aes(fill = Stimme), position=position_dodge2())
-    geom_line(aes(color = Stimme, alpha = .3))
-
-pe23_prints %>%
-    mutate(glMw5 = rollmean(Quantität, 
-
-pe23_rm
-# Gruppierung der Stimmen nach Instrumenten, Stimmen, Partitur
-voices <- c('EStA', 'EStB', 'EStS', 'EStT', 'EStC')
-pe23_prints_null %>%
-  mutate(
-    Gruppe = ifelse(
-      Stimme == 'P',
-      'P', 
-      ifelse(
-        Stimme %in% voices, 
-        'Stimme',
-        'Instrument')
-      )
-    ) %>%
-  ggplot(aes(x = Jahr, y = Quantität)) +
-  geom_line(aes(color = Stimme)) +
-  facet_grid(rows = vars(Gruppe), scales='free')
-
-# Einzelfacettierung
-pe23_prints_null %>% ggplot(aes(x = Jahr, y = Quantität)) +
-  geom_line() +
-  facet_grid(rows = vars(Stimme))
