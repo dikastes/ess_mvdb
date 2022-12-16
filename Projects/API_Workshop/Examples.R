@@ -180,6 +180,43 @@ pe43_prints %>% ggplot(aes(x = Jahr, y = Quantität)) #+
   #geom_violin()
   #geom_line()
 
+rg <- tibble(Jahr = 1870:1930)
+pe43_prints %>% 
+    full_join(rg) %>%
+    replace_na(list(Quantität = 0)) ->
+    pe43_prints_null
+
+pe43_prints_null %>% ggplot(aes(x = Jahr, y = Quantität)) +
+    geom_line()
+
+pe43_prints_null %>% 
+    mutate(glMw = rollmean(Quantität, 5, na.pad=TRUE)) %>%
+    ggplot(aes(x = Jahr, y = glMw)) +
+        geom_line()
+
+
+bach %>% expand_economics
+
+requiem %>% expand_economics
+
+violine %>% expand_economics
+
+lied %>% expand_economics
+
+liedlied %>% expand_economics
+
+bach %>% plot_timeseries
+
+lied %>% plot_timeseries
+
+requiem %>% plot_timeseries
+
+lied %>% plot_timeseries
+
+liedlied %>% plot_timeseries
+
+
+
 # Zeige die Entwicklung der Auflagen von PE_00023
 pe23 <- search(q='PE_00023')
 pe23 %>%
@@ -194,7 +231,6 @@ pe23 %>%
     arrange(Jahr) ->
     pe23_prints
 
-rg <- tibble(Jahr = 1870:1930)
 pe23_prints %>%
     full_join(rg) %>%
     complete(Jahr, Stimme, fill = list(Quantität = 0)) %>%
@@ -203,17 +239,21 @@ pe23_prints %>%
 
 # Dotplot
 pe23_prints %>% ggplot(aes(x = Jahr, y = Stimme)) +
-  geom_point(aes(size = Quantität)) +
-  geom_line() +
-  theme_minimal()
+    geom_point(aes(size = Quantität)) +
+    geom_line() +
+    theme_minimal()
 
 # 
 pe23_prints_null %>% ggplot(aes(x = Jahr, y = Quantität)) +  
-  #geom_point()
-  #geom_point(aes(color = Stimme, alpha = .1))
-  #geom_col(aes(fill = Stimme), position=position_dodge2())
-  geom_line(aes(color = Stimme, alpha = .3))
+    #geom_point()
+    #geom_point(aes(color = Stimme, alpha = .1))
+    #geom_col(aes(fill = Stimme), position=position_dodge2())
+    geom_line(aes(color = Stimme, alpha = .3))
 
+pe23_prints %>%
+    mutate(glMw5 = rollmean(Quantität, 
+
+pe23_rm
 # Gruppierung der Stimmen nach Instrumenten, Stimmen, Partitur
 voices <- c('EStA', 'EStB', 'EStS', 'EStT', 'EStC')
 pe23_prints_null %>%

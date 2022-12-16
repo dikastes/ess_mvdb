@@ -54,12 +54,16 @@ expand_economics <- function(df) {
         type <- 'genre'
     }
     # conditional expansion
+    print(type)
     if (type == 'instrument') {
         df %<>%
-            mutate( uid_instrument = uid ) %>%
+            rename( uid_instrument = uid ) %>%
             filter( lengths(instrumentations) > 0 ) %>%
             unnest( instrumentations, names_repair = repair ) %>%
             rename( uid_instrumentations = uid )
+    }
+    if (type == 'work') {
+        df %<>% rename( uid_work = uid )
     }
     if (type == 'person') {
         df %<>% rename( uid_person = uid )
@@ -89,11 +93,14 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
     if (!('quantity' %in% colnames(df))) {
         df %<>% expand_economics
     }
+    if (movavg) {
+        df %<>% mutate(Total = rollmean(Total, movavg))
+    }
+    df %<>%
+        mutate(Jahr = year(date_of_action))
     df %>% summarise(d = min(Jahr)) -> min_year
     df %>% summarise(d = max(Jahr)) -> max_year
     tibble(Jahr = min_year$d : max_year$d) -> year_span
-    df %<>%
-        mutate(Jahr = year(date_of_action))
     print("color")
     print(color)
     print("facet")
@@ -156,7 +163,7 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
                 select(uid_print, quantity, Jahr) %>%
                 unique %>%
                 group_by_("Jahr") %>%
-                summarise(Total = sum(quantity))
+                summarise(Total = sum(quantity)) %>%
                 ggplot(aesthetics) +
                     geom_line() +
                     theme_minimal()
