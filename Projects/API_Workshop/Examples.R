@@ -11,23 +11,23 @@ deutsch <- search(q='deutsch*', i='work')$generic_title
 # Suche nach 'Violine' im Feld 'name' von Instrumenten
 violine <- search(q='violine', i='instrument', f='name')
 # Suche nach 'Lied' in Genres
-lied <- search(q='lied', i='genre')
+lied <- search(q='sonate', i='genre')
 # Suche nach 'Lied' m Feld 'name' von Genres
 liedlied <- search(q='lied', f='name', i='genre')
 
 # II Beispiele
-bach %>% expand_economics
+bach %>% expand_economics %>% View
 bach %>% write_csvfile
-bach %>% plot_timeseries
+bach %>% plot_timeseries 
+bach %>% plot_timeseries(movavg = 7)
+bach %>% expand_economics %>% colnames
 bach %>% plot_timeseries(color = 'is_piano_reduction')
-bach %>% plot_timeseries(facet = 'title')
-bach %>% plot_timeseries
+bach %>% plot_timeseries(facet = 'piano_reduction_type')
 
 requiem %>% expand_economics
 violine %>% expand_economics
 lied %>% expand_economics
 liedlied %>% expand_economics
-
 
 lied %>% plot_timeseries
 requiem %>% plot_timeseries
