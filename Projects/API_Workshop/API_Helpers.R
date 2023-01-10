@@ -131,7 +131,7 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
         } else {
             crossing(year_span, df %>% ungroup %>% select({{color}}) %>% unique) ->
                 joiner
-            df %>%
+            df %<>%
                 select(uid_print, quantity, Jahr, {{color}}) %>%
                 unique %>%
                 group_by_("Jahr", color) %>%
