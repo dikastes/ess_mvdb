@@ -1,3 +1,115 @@
+# I API-Anbindung
+
+# Suche nach 'Bach' in Verlagsartikeln
+bach <- search(q='bach')
+# Suche nach 'Mozart' in Personen
+mozart <- search(q='mozart', i='person')
+# Suche nach 'Requiem' in Werken
+requiem <- search(q='requiem', i='work')
+# Suche nach 'deutsch' mit freier Endung in Werken
+deutsch <- search(q='deutsch*', i='work')$generic_title
+# Suche nach 'Violine' im Feld 'name' von Instrumenten
+violine <- search(q='violine', i='instrument', f='name')
+# Suche nach 'Lied' in Genres
+lied <- search(q='lied', i='genre')
+# Suche nach 'Lied' m Feld 'name' von Genres
+liedlied <- search(q='lied', f='name', i='genre')
+
+# II Beispiele
+bach %>% expand_economics
+bach %>% write_csvfile
+bach %>% plot_timeseries
+bach %>% plot_timeseries(color = 'is_piano_reduction')
+bach %>% plot_timeseries(facet = 'title')
+bach %>% plot_timeseries
+
+requiem %>% expand_economics
+violine %>% expand_economics
+lied %>% expand_economics
+liedlied %>% expand_economics
+
+
+lied %>% plot_timeseries
+requiem %>% plot_timeseries
+lied %>% plot_timeseries
+liedlied %>% plot_timeseries
+
+# III Direktpipelines
+
+search('mozart') %>% write_csvfile
+search('violine') %>% plot_timeseries
+
+# IV Eigene Datenmanipulation
+
+# Mit unnest werden komplexe Zellen in die Tabelle expandiert. Es entstehen
+# neue Zeilen und neue Spalten.
+# Mit filter werden Zeilen anhand einer Bedingung aussortiert.
+repair <- 'unique'
+bach %>%
+    unnest(works, repair = repair)
+bach %>%
+    unnest(works, repair = repair) %>%
+    unnest(published_subitems, repair = repair) %>%
+    filter(lengths(prints) > 0) %>%
+    unnest(prints, repair = repair) ->
+    bach_expanded
+
+# Einzelne Spalten eines Tibbles können verändert werden.
+bach_expanded %>% mutate(quantity = quantity * 2)
+
+# Mozarts Problem
+mozart %>%
+    unnest(works, repair = repair) %>%
+    unnest(published_subitems, repair = repair) %>%
+    filter(lengths(prints) > 0) %>%
+    unnest(prints, repair = repair) ->
+    mozart_expanded
+mozart_expanded %>%
+    filter(
+        (uid1 == 822 | uid1 == 823),
+        uid3 == 4829
+    )
+mozart_expanded %>%
+    summarise(Total = sum(quantity))
+mozart_expanded %>%
+    select(uid3, quantity) %>%
+    unique %>%
+    summarise(Total = sum(quantity))
+
+# V Eigene Grafiken
+
+# Zeige die Entwicklung der Auflagen von PE_00043
+pe43 <- search(q='PE_00043')
+pe43 %>%
+    unnest('published_subitems', names_repair = repair) %>%
+    unnest('prints', names_repair = repair) %>%
+    select(date_of_action, Quantität = quantity) %>%
+    mutate(Jahr = year(date_of_action)) %>%
+    arrange(Jahr) ->
+    pe43_prints
+
+pe43_prints %>% ggplot(aes(x = Jahr, y = Quantität)) #+
+  #geom_point()
+  #geom_col()
+  #geom_violin()
+  #geom_line()
+
+rg <- tibble(Jahr = 1870:1930)
+pe43_prints %>% 
+    full_join(rg) %>%
+    replace_na(list(Quantität = 0)) ->
+    pe43_prints_null
+
+pe43_prints_null %>% ggplot(aes(x = Jahr, y = Quantität)) +
+    geom_line()
+
+pe43_prints_null %>% 
+    mutate(glMw = rollmean(Quantität, 5, na.pad=TRUE)) %>%
+    ggplot(aes(x = Jahr, y = glMw)) +
+        geom_line()
+
+
+
 # Einführung R-REPL
 
 # Die REPL (read eval print loop) nimmt Ausdrücke entgegen, evaluiert sie, 
@@ -67,23 +179,6 @@ addIncrement(2, 3)
 addIncrement(arg1 = 2, arg2 = 3)
 addIncrement(arg2 = 3, arg1 = 2)
 
-# API-Anbindung
-
-# Suche nach 'Bach' in Verlagsartikeln
-bach <- search(q='bach')
-# Suche nach 'Mozart' in Personen
-mozart <- search(q='mozart', i='person')
-# Suche nach 'Requiem' in Werken
-requiem <- search(q='requiem', i='work')
-# Suche nach 'deutsch' mit freier Endung in Werken
-deutsch <- search(q='deutsch*', i='work')$generic_title
-# Suche nach 'Violine' im Feld 'name' von Instrumenten
-violine <- search(q='violine', i='instrument', f='name')
-# Suche nach 'Lied' in Genres
-lied <- search(q='lied', i='genre')
-# Suche nach 'Lied' m Feld 'name' von Genres
-liedlied <- search(q='lied', f='name', i='genre')
-
 # Mit dem Tidyverse steht uns der pipe-Operator %>% zur Verfügung.
 # Damit können Funktionsaufrufe fun(param1) umgeschrieben werden als
 # param1 %>% fun.
@@ -116,41 +211,6 @@ sum(buffer)
 # 3. Piping
 datapoints %>% double %>% sum
 
-# Mit unnest werden komplexe Zellen in die Tabelle expandiert. Es entstehen
-# neue Zeilen und neue Spalten.
-# Mit filter werden Zeilen anhand einer Bedingung aussortiert.
-repair <- 'unique'
-bach %>%
-    unnest(works, repair = repair)
-bach %>%
-    unnest(works, repair = repair) %>%
-    unnest(published_subitems, repair = repair) %>%
-    filter(lengths(prints) > 0) %>%
-    unnest(prints, repair = repair) ->
-    bach_expanded
-
-# Einzelne Spalten eines Tibbles können verändert werden.
-bach_expanded %>% mutate(quantity = quantity * 2)
-
-# Mozarts Problem
-mozart %>%
-    unnest(works, repair = repair) %>%
-    unnest(published_subitems, repair = repair) %>%
-    filter(lengths(prints) > 0) %>%
-    unnest(prints, repair = repair) ->
-    mozart_expanded
-mozart_expanded %>%
-    filter(
-        (uid1 == 822 | uid1 == 823),
-        uid3 == 4829
-    )
-mozart_expanded %>%
-    summarise(Total = sum(quantity))
-mozart_expanded %>%
-    select(uid3, quantity) %>%
-    unique %>%
-    summarise(Total = sum(quantity))
-
 # mutate ist Teil des dplyr-Paketes im Tidyverse, siehe das dazugehörige
 # Cheatsheet
 # https://github.com/rstudio/cheatsheets/blob/main/data-transformation.pdf
@@ -181,57 +241,4 @@ bach_expanded %>%
 # in Verbindung mit summarise
 # *unique*: lösche alle duplizierten Zeilen, s.u.
 # *arrange*: sortiere Zeilen anhand einer Spalte, s.u.
-
-# Zeitserien
-
-# Zeige die Entwicklung der Auflagen von PE_00043
-pe43 <- search(q='PE_00043')
-pe43 %>%
-    unnest('published_subitems', names_repair = repair) %>%
-    unnest('prints', names_repair = repair) %>%
-    select(date_of_action, Quantität = quantity) %>%
-    mutate(Jahr = year(date_of_action)) %>%
-    arrange(Jahr) ->
-    pe43_prints
-
-pe43_prints %>% ggplot(aes(x = Jahr, y = Quantität)) #+
-  #geom_point()
-  #geom_col()
-  #geom_violin()
-  #geom_line()
-
-rg <- tibble(Jahr = 1870:1930)
-pe43_prints %>% 
-    full_join(rg) %>%
-    replace_na(list(Quantität = 0)) ->
-    pe43_prints_null
-
-pe43_prints_null %>% ggplot(aes(x = Jahr, y = Quantität)) +
-    geom_line()
-
-pe43_prints_null %>% 
-    mutate(glMw = rollmean(Quantität, 5, na.pad=TRUE)) %>%
-    ggplot(aes(x = Jahr, y = glMw)) +
-        geom_line()
-
-
-bach %>% expand_economics
-
-requiem %>% expand_economics
-
-violine %>% expand_economics
-
-lied %>% expand_economics
-
-liedlied %>% expand_economics
-
-bach %>% plot_timeseries
-
-lied %>% plot_timeseries
-
-requiem %>% plot_timeseries
-
-lied %>% plot_timeseries
-
-liedlied %>% plot_timeseries
 

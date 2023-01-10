@@ -109,11 +109,8 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
     print("facet")
     print(facet)
     if (color != '') {
-        print("if")
         aesthetics <- aes_string(x = "Jahr", y = "Total", color = color)
-        print(aesthetics)
         if (facet != '') {
-            print("ifif")
             crossing(year_span, df %>% ungroup %>% select({{color}}, {{facet}}) %>% unique) ->
                 joiner
             df %<>%
@@ -132,7 +129,6 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
                     facet_grid(rows = {{facet}}) +
                     theme_minimal()
         } else {
-            print("ifelse")
             crossing(year_span, df %>% ungroup %>% select({{color}}) %>% unique) ->
                 joiner
             df %>%
@@ -152,9 +148,7 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
         }
     } else {
         aesthetics <- aes(x = Jahr, y = Total)
-        print("else")
         if (facet != '') {
-            print("elseif")
             crossing(year_span, df %>% ungroup %>% select({{facet}}) %>% unique) ->
                 joiner
             df %<>%
@@ -173,7 +167,6 @@ plot_timeseries <- function(df, color = '', facet = '', movavg = 0) {
                     facet_grid(rows = {{facet}}) +
                     theme_minimal()
         } else {
-            print("elseelse")
             df %<>%
                 select(uid_print, quantity, Jahr) %>%
                 unique %>%
