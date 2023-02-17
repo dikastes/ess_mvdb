@@ -14,6 +14,8 @@ violine <- search(q='violine', i='instrument', f='name')
 lied <- search(q='sonate', i='genre')
 # Suche nach 'Lied' m Feld 'name' von Genres
 liedlied <- search(q='lied', f='name', i='genre')
+violine <- search(q='violine', f='name', i='instrument')
+violine %>% expand_economics
 
 # II Beispiele
 bach %>% expand_economics %>% View

@@ -14,9 +14,9 @@ config <- function(path, size = 10000) {
   str_c(path, '?size=', size)
 }
 
-search <- function(query = '', fields = '', index = 'published_item') {
+search <- function(query = '', fields = '', index = 'published_item', size = 1000, from = 0) {
   path <- 'https://musikverlage.slub-dresden.de/api/search'
-  url <- config(path)
+  url <- config(path, size)
   url <- str_c(url, '&index=', index)
   if (query!= '') {
     url <- str_c(url, '&query=', query)
